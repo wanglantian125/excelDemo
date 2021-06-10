@@ -3,16 +3,13 @@ package com.excel.demo.getExcel.controller;
 
 import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.ExportParams;
-import com.excel.demo.getExcel.entity.SysAccount;
-import com.excel.demo.getExcel.entity.SysOrg;
-import com.excel.demo.getExcel.entity.SysUser;
-import com.excel.demo.getExcel.service.ISysAccountService;
-import com.excel.demo.getExcel.service.ISysOrgService;
-import com.excel.demo.getExcel.service.ISysUserService;
+import com.excel.demo.getExcel.entity.*;
+import com.excel.demo.getExcel.service.*;
 import com.excel.demo.getExcel.utils.PoiUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,25 +34,58 @@ public class ExcelController {
     private ISysAccountService sysAccountService;
     @Autowired
     private ISysOrgService sysOrgService;
+    @Autowired
+    private SysAccountRoleRelaService sysAccountRoleRelaService;
+    @Autowired
+    private WaterTestService waterTestService;
+
+    @RequestMapping("/getExcelRole")
+    @Transactional
+    public void getExcelRole() throws Exception {
+        File file =  new File("D:\\work\\shuju.xls");
+        InputStream inputStream = new FileInputStream(file);
+        MultipartFile multipartFile = new MockMultipartFile(file.getName(), inputStream);
+        List<WaterTest> waterTests = PoiUtils.importRole2List(multipartFile);
+        waterTests.stream().forEach(e->{
+            waterTestService.save(e);
+        });
+        System.out.println("导入完成");
+    }
 
 
     @RequestMapping("/getExcel")
+    @Transactional
     public void getExcel() throws Exception {
         File file =  new File("D:\\work\\test.xls");
+        int count = sysUserService.count();
+        System.out.println(count);
+
         InputStream inputStream = new FileInputStream(file);
         MultipartFile multipartFile = new MockMultipartFile(file.getName(), inputStream);
         List<SysUser> sysUsers = PoiUtils.importUser2List(multipartFile);
-        System.out.println(sysUsers);
-        sysUserService.saveBatch(sysUsers);
+        sysUsers.stream().forEach(e->{
+            if(!"".equals(e.getCn())){
+                System.out.println(e);
+                sysUserService.save(e);
+            }
+        });
+        System.out.println("导入完成");
     }
 
+    @Transactional
     @RequestMapping("/getExcel2")
     public void getExcel2() throws Exception {
         File file =  new File("D:\\work\\test2.xls");
         InputStream inputStream = new FileInputStream(file);
         MultipartFile multipartFile = new MockMultipartFile(file.getName(), inputStream);
         List<SysAccount> sysAccounts = PoiUtils.importAccount2List(multipartFile);
-        sysAccountService.saveBatch(sysAccounts);
+        sysAccounts.stream().forEach(e->{
+            if(!"".equals(e.getAccountName())){
+                System.out.println(e);
+                sysAccountService.save(e);
+            }
+        });
+        System.out.println("导入完成");
     }
 
     @RequestMapping("/getExcel3")
@@ -66,18 +96,17 @@ public class ExcelController {
         List<SysOrg> sysOrgs = PoiUtils.importOrg2List(multipartFile);
         sysOrgService.saveBatch(sysOrgs);
     }
-
-    /*@PostMapping("/excel")
-    public void excel(HttpServletResponse response, HttpServletRequest request,
-                      @RequestBody Map<String, String> params) throws Exception {
-        QueryWrapper<SerBossPubFreeNum> query = getQuery(params);
-        List<SerBossPubFreeNum> data = service.list(query);
-        Workbook workbook = ExcelExportUtil.exportExcel(new ExportParams(null, "SerBossPubFreeNum"),
-                SerBossPubFreeNum.class, data);
-        String fileName = String.format("SerBossPubFreeNum_%d.xls", System.currentTimeMillis());
-        response.setHeader("Content-Disposition", "attachment;Filename="+ fileName);
-        response.setContentType("application/vnd.ms-excel;charset=UTF-8");
-        response.flushBuffer();
-        workbook.write(response.getOutputStream());
-    }*/
+    @PostMapping("/updateShuju")
+    public void updateShuju() throws Exception {
+        List<SysOrg> sysOrgs =sysOrgService.list();
+        sysOrgs.stream().forEach(e->{
+            if(e.getDisplayName().endsWith("公司")){
+                e.setStyle("2");
+            }else{
+                e.setStyle("1");
+            }
+            sysOrgService.updateById(e);
+        });
+        System.out.println("success");
+    }
 }

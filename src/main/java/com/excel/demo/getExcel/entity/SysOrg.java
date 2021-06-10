@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 public class SysOrg extends TreeNode implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
+    @TableId(value = "org_code")
     private String orgCode;
 
     private String displayName;

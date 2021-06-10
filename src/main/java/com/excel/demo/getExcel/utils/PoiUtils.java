@@ -1,9 +1,13 @@
 package com.excel.demo.getExcel.utils;
 
 
-import com.excel.demo.getExcel.entity.SysAccount;
-import com.excel.demo.getExcel.entity.SysOrg;
-import com.excel.demo.getExcel.entity.SysUser;
+import com.excel.demo.getExcel.entity.*;
+import net.sourceforge.pinyin4j.PinyinHelper;
+import net.sourceforge.pinyin4j.format.HanyuPinyinCaseType;
+import net.sourceforge.pinyin4j.format.HanyuPinyinOutputFormat;
+import net.sourceforge.pinyin4j.format.HanyuPinyinToneType;
+import net.sourceforge.pinyin4j.format.HanyuPinyinVCharType;
+import net.sourceforge.pinyin4j.format.exception.BadHanyuPinyinOutputFormatCombination;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
@@ -79,8 +83,10 @@ public class PoiUtils {
                     sysUser.setOrgCode(row2);
                     sysUser.setCompanyId("1354722520332210177");
                     sysUser.setCn(row0);//用户名
+                    sysUser.setSn(getPinyin(row0));
                     sysUser.setStatus("0");
                     sysUser.setEmployeeType("1");
+                    sysUser.setMobile(row3);
                     sysUser.setCreateTime(new Date().toInstant().atOffset(ZoneOffset.of("+8")).toLocalDateTime());
                     sysUser.setUpdatedTime(new Date().toInstant().atOffset(ZoneOffset.of("+8")).toLocalDateTime());
                     lists.add(sysUser);
@@ -130,7 +136,8 @@ public class PoiUtils {
                 String row5 =row.getCell(5)==null?"":row.getCell(5).getCellType().equals(CellType.NUMERIC)?String.valueOf((int)row.getCell(5).getNumericCellValue()):row.getCell(5).toString();
                 String row6 =row.getCell(6)==null?"":row.getCell(6).getCellType().equals(CellType.NUMERIC)?String.valueOf((int)row.getCell(6).getNumericCellValue()):row.getCell(6).toString();
                 String row7 =row.getCell(7)==null?"":row.getCell(7).getCellType().equals(CellType.NUMERIC)?String.valueOf((int)row.getCell(7).getNumericCellValue()):row.getCell(7).toString();
-                sysAccount.setAccountId(row2);//账户id
+                sysAccount.setCustomAccountId(row2);//账户id
+                sysAccount.setAccountId(row1);
                 sysAccount.setUserId(row1);//userId
                 sysAccount.setAppId("1354721207640866817");
                 sysAccount.setAccountName(row0);//账户名称
@@ -224,6 +231,88 @@ public class PoiUtils {
                 sysOrg.setCreateTime(new Date().toInstant().atOffset(ZoneOffset.of("+8")).toLocalDateTime());
                 sysOrg.setUpdatedTime(new Date().toInstant().atOffset(ZoneOffset.of("+8")).toLocalDateTime());
                 lists.add(sysOrg);
+            }
+        }
+
+        // 将遍历得到的数据集合返回
+        return lists;
+    }
+
+    /**
+     * @param china (字符串 汉字)
+     * @return 汉字转拼音 其它字符不变
+     */
+    public static String getPinyin(String china){
+        HanyuPinyinOutputFormat formart = new HanyuPinyinOutputFormat();
+        formart.setCaseType(HanyuPinyinCaseType.LOWERCASE);
+        formart.setToneType(HanyuPinyinToneType.WITHOUT_TONE);
+        formart.setVCharType(HanyuPinyinVCharType.WITH_V);
+        char[] arrays = china.trim().toCharArray();
+        String result = "";
+        try {
+            for (int i=0;i<arrays.length;i++) {
+                char ti = arrays[i];
+                if(Character.toString(ti).matches("[\\u4e00-\\u9fa5]")){ //匹配是否是中文
+                    String[] temp = PinyinHelper.toHanyuPinyinStringArray(ti,formart);
+                    result += temp[0];
+                }else{
+                    result += ti;
+                }
+            }
+        } catch (BadHanyuPinyinOutputFormatCombination e) {
+            e.printStackTrace();
+        }
+
+        return result;
+    }
+
+    public static List<WaterTest> importRole2List(MultipartFile file) throws IOException {
+        List<WaterTest> lists = new ArrayList<WaterTest>();
+        if (file.isEmpty()) {
+            throw new IOException("excil为空");
+        }
+
+        // 根据上传文件的流获取一个 HSSFWorkbook 对象
+        HSSFWorkbook workbook = null;
+        try {
+            workbook = new HSSFWorkbook(new POIFSFileSystem(file.getInputStream()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new IOException("请使用载模板上传");
+        }
+        // 获取 workbook 中表单的个数
+        int numberOfSheets = workbook.getNumberOfSheets();
+
+        // 遍历表单
+        for ( int i = 0; i < numberOfSheets; i++ ) {
+            HSSFSheet sheet = workbook.getSheetAt(i);
+            // 对于每个表单，先获取行数
+            int physicalNumberOfRows = sheet.getPhysicalNumberOfRows();
+            for ( int j = 0; j < physicalNumberOfRows; j++ ) {
+                if (j == 0) {
+                    continue;//标题行跳过
+                }
+                HSSFRow row = sheet.getRow(j);
+                if (row == null) {
+                    continue;//没数据跳过
+                }
+                WaterTest waterTest =new WaterTest();
+                String row0 =row.getCell(0)==null?"":row.getCell(0).getCellType().equals(CellType.NUMERIC)?String.valueOf((int)row.getCell(0).getNumericCellValue()):row.getCell(0).toString();
+                String row1 =row.getCell(1)==null?"":row.getCell(1).getCellType().equals(CellType.NUMERIC)?String.valueOf((int)row.getCell(1).getNumericCellValue()):row.getCell(1).toString();
+                String row2 =row.getCell(2)==null?"":row.getCell(2).getCellType().equals(CellType.NUMERIC)?String.valueOf((double)row.getCell(2).getNumericCellValue()):row.getCell(2).toString();
+                String row3 =row.getCell(3)==null?"":row.getCell(3).getCellType().equals(CellType.NUMERIC)?String.valueOf((double)row.getCell(3).getNumericCellValue()):row.getCell(3).toString();
+                String row4 =row.getCell(4)==null?"":row.getCell(4).getCellType().equals(CellType.NUMERIC)?String.valueOf((double)row.getCell(4).getNumericCellValue()):row.getCell(4).toString();
+                String row5 =row.getCell(5)==null?"":row.getCell(5).getCellType().equals(CellType.NUMERIC)?String.valueOf((double)row.getCell(5).getNumericCellValue()):row.getCell(5).toString();
+                String row6 =row.getCell(6)==null?"":row.getCell(6).getCellType().equals(CellType.NUMERIC)?String.valueOf((double)row.getCell(6).getNumericCellValue()):row.getCell(6).toString();
+                String row7 =row.getCell(7)==null?"":row.getCell(7).getCellType().equals(CellType.NUMERIC)?String.valueOf((double)row.getCell(7).getNumericCellValue()):row.getCell(7).toString();
+                waterTest.setYear(row0);
+                waterTest.setCity(row1);
+                waterTest.setPeopleAll(Double.valueOf(row2));
+                waterTest.setGdp(Double.valueOf(row3));
+                waterTest.setPeopleCity(Double.valueOf(row4));
+                waterTest.setWaterAll(Double.valueOf(row5));
+                waterTest.setWaterLife(Double.valueOf(row6));
+                lists.add(waterTest);
             }
         }
 
