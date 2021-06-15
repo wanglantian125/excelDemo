@@ -19,6 +19,32 @@ public class WaterTest implements Serializable {
     private double peopleCity;
     private double waterAll;
     private double waterLife;
+    private double waterOfGdp;
+    private double gdpOfPeppleAll;
+    private double lifeInAll;
+
+    private double detes;
+    private double detet;
+    private double detee;
+    private double detep;
+    private double detedw;
+    private double detedws;
+
+    public double getDetedws() {
+        return detedws;
+    }
+
+    public void setDetedws(double detedws) {
+        this.detedws = detedws;
+    }
+
+    public double getDetedw() {
+        return detedw;
+    }
+
+    public void setDetedw(double detedw) {
+        this.detedw = detedw;
+    }
 
     public String getId() {
         return id;
@@ -84,17 +110,60 @@ public class WaterTest implements Serializable {
         this.waterLife = waterLife;
     }
 
-    @Override
-    public String toString() {
-        return "WaterTest{" +
-                "id='" + id + '\'' +
-                ", year='" + year + '\'' +
-                ", city='" + city + '\'' +
-                ", peopleAll='" + peopleAll + '\'' +
-                ", gdp='" + gdp + '\'' +
-                ", peopleCity='" + peopleCity + '\'' +
-                ", waterAll='" + waterAll + '\'' +
-                ", waterLife='" + waterLife + '\'' +
-                '}';
+    public double getWaterOfGdp() {
+        return waterOfGdp;
+    }
+
+    public void setWaterOfGdp(double waterOfGdp) {
+        this.waterOfGdp = waterOfGdp;
+    }
+
+    public double getGdpOfPeppleAll() {
+        return gdpOfPeppleAll;
+    }
+
+    public void setGdpOfPeppleAll(double gdpOfPeppleAll) {
+        this.gdpOfPeppleAll = gdpOfPeppleAll;
+    }
+
+
+    public double getLifeInAll() {
+        return lifeInAll;
+    }
+
+    public void setLifeInAll(double lifeInAll) {
+        this.lifeInAll = lifeInAll;
+    }
+
+    public double getDetes() {
+        return detes;
+    }
+
+    public void setDetes(double detes) {
+        this.detes = detes;
+    }
+
+    public double getDetet() {
+        return detet;
+    }
+
+    public void setDetet(double detet) {
+        this.detet = detet;
+    }
+
+    public double getDetee() {
+        return detee;
+    }
+
+    public void setDetee(double detee) {
+        this.detee = detee;
+    }
+
+    public double getDetep() {
+        return detep;
+    }
+
+    public void setDetep(double detep) {
+        this.detep = detep;
     }
 }

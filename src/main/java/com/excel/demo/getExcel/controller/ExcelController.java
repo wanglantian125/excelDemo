@@ -3,6 +3,7 @@ package com.excel.demo.getExcel.controller;
 
 import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.ExportParams;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.excel.demo.getExcel.entity.*;
 import com.excel.demo.getExcel.service.*;
 import com.excel.demo.getExcel.utils.PoiUtils;
@@ -23,6 +24,7 @@ import javax.xml.ws.Action;
 import java.io.*;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/excel")
@@ -98,15 +100,75 @@ public class ExcelController {
     }
     @PostMapping("/updateShuju")
     public void updateShuju() throws Exception {
-        List<SysOrg> sysOrgs =sysOrgService.list();
-        sysOrgs.stream().forEach(e->{
-            if(e.getDisplayName().endsWith("公司")){
-                e.setStyle("2");
-            }else{
-                e.setStyle("1");
-            }
-            sysOrgService.updateById(e);
+        List<WaterTest> list = waterTestService.list();
+        list.stream().forEach(e->{
+            List<WaterTest> year = waterTestService.list(new QueryWrapper<WaterTest>().eq("year", e.getYear()));
+            Double all = 0.0;
+            for(WaterTest f : year){
+                all += f.getPeopleAll();
+            };
+            e.setGdpOfPeppleAll(e.getGdp()/e.getPeopleAll());
+            e.setLifeInAll(e.getWaterLife()/e.getWaterAll());
+            e.setWaterOfGdp(e.getWaterAll()/e.getGdp());
+            waterTestService.updateById(e);
         });
-        System.out.println("success");
     }
+
+    @PostMapping("/getShuju2")
+    public void getShuju2(String year1,String year2) throws Exception {
+        for(int i=2007;i<=2019;i++){
+            double peopleAll = 0.0;
+            double gdp = 0.0;
+            double peopleCity = 0.0;
+            double waterAll = 0.0;
+            double waterLife = 0.0;
+            List<WaterTest> waterTests = waterTestService.list(new QueryWrapper<WaterTest>().eq("year", i));
+            for(WaterTest waterTest : waterTests){
+                peopleAll +=waterTest.getPeopleAll();
+                gdp += waterTest.getGdp();
+                peopleCity+=waterTest.getPeopleCity();
+                waterAll+=waterTest.getWaterAll();
+                waterLife+=waterTest.getWaterLife();
+            };
+            WaterTest waterTest = new WaterTest();
+            waterTest.setYear(String.valueOf(i));
+            waterTest.setCity("山东省");
+            waterTest.setPeopleAll(peopleAll);
+            waterTest.setGdp(gdp);
+            waterTest.setPeopleCity(peopleCity);
+            waterTest.setWaterAll(waterAll);
+            waterTest.setWaterLife(waterLife);
+            waterTestService.save(waterTest);
+        }
+    }
+
+
+    @PostMapping("/getShuju")
+    public void getShuju(@RequestBody Map<String,Object> map) throws Exception {
+        String year1 = map.get("year1").toString();
+        String year2 = map.get("year2").toString();
+        //小年份
+        List<WaterTest> waterTests1 = waterTestService.list(new QueryWrapper<WaterTest>().eq("year", year1));
+        //大年份
+        List<WaterTest> waterTests2 = waterTestService.list(new QueryWrapper<WaterTest>().eq("year", year2));
+
+        waterTests2.stream().forEach(e->{
+            WaterTest waterTest = waterTests1.stream().filter(f -> f.getCity().equals(e.getCity())).collect(Collectors.toList()).get(0);
+            double common = (e.getWaterLife() - waterTest.getWaterLife()) / (Math.log(e.getWaterLife()) - Math.log(waterTest.getWaterLife()));
+            double detes = common * Math.log(e.getLifeInAll() / waterTest.getLifeInAll());
+            double detet = common * Math.log(e.getWaterOfGdp() / waterTest.getWaterOfGdp());
+            double detee = common * Math.log(e.getGdpOfPeppleAll() / waterTest.getGdpOfPeppleAll());
+            double detep = common * Math.log(e.getPeopleAll() / waterTest.getPeopleAll());
+            double detedw = e.getWaterLife() - waterTest.getWaterLife();
+            e.setDetee(detee);
+            e.setDetep(detep);
+            e.setDetes(detes);
+            e.setDetet(detet);
+            e.setDetedw(detedw);
+            e.setDetedws(detee+detep+detes+detet);
+            waterTestService.updateById(e);
+        });
+    }
+
+
 }
