@@ -6,8 +6,12 @@ import cn.afterturn.easypoi.excel.entity.ExportParams;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.excel.demo.getExcel.entity.*;
 import com.excel.demo.getExcel.service.*;
+import com.excel.demo.getExcel.utils.ChartFactory;
 import com.excel.demo.getExcel.utils.PoiUtils;
+import com.excel.demo.getExcel.utils.Serie;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.jfree.chart.ChartUtilities;
+import org.jfree.chart.JFreeChart;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +28,7 @@ import javax.xml.ws.Action;
 import java.io.*;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 import java.util.stream.Collectors;
 
 @RestController
@@ -171,4 +176,75 @@ public class ExcelController {
     }
 
 
+    @RequestMapping("/getTu")
+    public void getTu() throws Exception {
+        List<WaterTest> waterTests = waterTestService.list(new QueryWrapper<WaterTest>().eq("year", "2019"));
+        List<WaterTest> waterTests1 = waterTests.stream().filter(f -> !f.getCity().equals("山东省")).collect(Collectors.toList());
+        List<WaterTest> waterTests2 = waterTests.stream().filter(f -> f.getCity().equals("山东省")).collect(Collectors.toList());
+        // 标注类别
+        String[] categories = { "△s", "△t", "△e", "△p", "△w"};
+        Vector<Serie> series = new Vector<Serie>();
+        waterTests1.stream().forEach(e->{
+            series.add(new Serie(e.getCity(), new Double[] { e.getDetes(), e.getDetet(), e.getDetee(), e.getDetep(),
+                    e.getDetedws() }));
+        });
+
+        Vector<Serie> series2 = new Vector<Serie>();
+        waterTests2.stream().forEach(e->{
+            series2.add(new Serie(e.getCity(), new Double[] { e.getDetes(), e.getDetet(), e.getDetee(), e.getDetep(),
+                    e.getDetedws() }));
+        });
+
+        String title = "2007-2019年水资源变化";
+        String categoryAxisLabel = "";
+        String valueAxisLabel = "变化单位 (mm)";
+        JFreeChart chart = ChartFactory.createBarChart(title,
+                categoryAxisLabel, valueAxisLabel, series, categories);
+
+        JFreeChart chart2 = ChartFactory.createBarChart(title,
+                categoryAxisLabel, valueAxisLabel, series2, categories);
+
+        File file = new File("D:\\2222.jpg");
+        File file2 = new File("D:\\3333.jpg");
+        int width = 1024;
+        int height = 420;
+        ChartUtilities.saveChartAsJPEG(file, chart, width, height);
+        ChartUtilities.saveChartAsJPEG(file2, chart2, width, height);
+    }
+
+    @RequestMapping("/getTu2")
+    public void getTu2() throws Exception{
+        List<WaterTest> waterTests = waterTestService.list(new QueryWrapper<WaterTest>().eq("city", "山东省").orderByAsc("year"));
+        // 标注类别
+        String[] categories = { "2007", "2008", "2009", "2010", "2011", "2012",
+                 "2013", "2014", "2015", "2016", "2017","2018","2019" };
+        Vector<Serie> series = new Vector<Serie>();
+        Double[] waterofgdp = new Double[13];
+        Double[] gdpofpeople = new Double[13];
+        Double[] lifeinall = new Double[13];
+        Double[] peopleall = new Double[13];
+        // 柱子名称：柱子所有的值集合
+        int i = 0;
+        for(WaterTest waterTest:waterTests){
+            waterofgdp[i] = waterTest.getWaterOfGdp()*100;
+            gdpofpeople[i] = waterTest.getGdpOfPeppleAll()/10;
+            lifeinall[i] = waterTest.getLifeInAll();
+            peopleall[i] = waterTest.getPeopleAll()/10000;
+            i += 1;
+        }
+        series.add(new Serie("生活用水比gdp", waterofgdp));
+        series.add(new Serie("gdp比人口总数", gdpofpeople));
+        series.add(new Serie("生活用水比总用水", lifeinall));
+        series.add(new Serie("人口总数", peopleall));
+        String title = "山东省变化";
+        String categoryAxisLabel = "";
+        String valueAxisLabel = "单位 (mm)";
+        JFreeChart chart = ChartFactory.createLineChart(title,
+                categoryAxisLabel, valueAxisLabel, series, categories);
+
+        File file = new File("D:\\7777.jpg");
+        int width = 1024;
+        int height = 420;
+        ChartUtilities.saveChartAsJPEG(file, chart, width, height);
+    }
 }
